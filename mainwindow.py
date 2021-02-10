@@ -474,13 +474,19 @@ class Application(tk.Frame):
                 file.write(bytes((str(scale[1]) + ',').encode()))
 
                 #ファイルパスを持ってきて
-                dds_file_path = myimg.file_name
-                #.の位置を調べる
-                number = dds_file_path.rfind('.')
-                #.から後を削除して
-                dds_file_path = dds_file_path[:number]
+                dds_file_path = fn
+                #スラッシュで切る
+                slash_number = dds_file_path.rfind('/')
+                dds_file_path = dds_file_path[:slash_number]
+
+                file_name = myimg.file_name
+                dot_number = file_name.rfind('.')
+                slash_number = file_name.rfind('/')
+                file_name = file_name[slash_number:dot_number]
+
+
                 #.ddsを加える
-                dds_file_path+='.dds'
+                dds_file_path+=file_name + '.dds'
 
                 #.ddsの場合のファイルパスを書き出す
                 file.write(bytes((str(len(dds_file_path)) + ',').encode()))
@@ -525,7 +531,7 @@ class Application(tk.Frame):
         self.load_image(myimg)
         
     #画像を削除する
-    def delete_image(self):
+    def delete_image(self,event=None):
         number = self.project_list.curselection()
         #何も選択されてなかったら処理をしない
         if len(number) == 0:
@@ -768,6 +774,18 @@ class Application(tk.Frame):
         myimg.set_position(self.canvas,position_x,position_y)
         self.select_image()
 
+    #キャンバスの色を黒色に変更する
+    def change_color_canvas_black(self):
+        self.change_color_canvas('gray0')
+
+    #キャンバスの色を黒色に変更する
+    def change_color_canvas_white(self):
+        self.change_color_canvas('gray100')
+
+    #キャンバスの色を変更する。
+    def change_color_canvas(self,color):
+        self.canvas.configure(bg=color)
+
     #今は使ってない
     #使うときが来るかもしれない
     def on_resize(self,event):
@@ -804,6 +822,11 @@ class Application(tk.Frame):
         self.canvas.bind('<Motion>', self.motion)
         self.canvas.bind('<B1-Motion>', self.dragged)
         self.canvas.bind('<ButtonRelease-1>', self.mouse_release)
+
+        #Deleteキー押したら削除
+        self.canvas.bind_all('<Delete>', self.delete_image)
+        
+        	
         #720*1280の枠を作る
         self.canvas_rect = self.canvas.create_rectangle(
             constant.ADD_CANVAS_SIZE,
@@ -831,6 +854,7 @@ class Application(tk.Frame):
         self.mcom = tk.Menu(self.mbar,tearoff=0)
         self.mcom2 = tk.Menu(self.mbar,tearoff=0)
         self.mcom3 = tk.Menu(self.mbar,tearoff=0)
+        self.mcom4 = tk.Menu(self.mbar,tearoff=0)
         #コマンドを追加
         self.mcom.add_command(label='画像読み込み',command=self.load_image)
         self.mcom.add_command(label='全削除',command=self.delete_all_image)
@@ -848,6 +872,9 @@ class Application(tk.Frame):
         self.mcom3.add_command(label='左',command=self.move_image_left)
         self.mcom3.add_command(label='右',command=self.move_image_right)
         self.mbar.add_cascade(label='移動',menu=self.mcom3)
+        self.mcom4.add_command(label='黒',command=self.change_color_canvas_black)
+        self.mcom4.add_command(label='白',command=self.change_color_canvas_white)
+        self.mbar.add_cascade(label='背景',menu=self.mcom4)
         self.master['menu'] = self.mbar
 
     #ラベルを初期化
