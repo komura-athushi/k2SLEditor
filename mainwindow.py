@@ -240,7 +240,21 @@ class Application(tk.Frame):
         item_id = self.canvas.find_closest(event.x, event.y)[0]
         self.number_rect = self.myframe.determine_where_frame_pressed(item_id)
 
-    
+    def enter_pivot(self,event):
+        #マウスのカーソルを変更する
+        self.master.configure(cursor=constant.MOUSE_CURSOR_PIVOT)
+
+    def leave_pivot(self,event):
+        if self.is_pressed_pivot == False:
+            #マウスカーソルをデフォルトに戻す
+            self.master.configure(cursor=constant.DEFAULT_MOUSE_CURSOR)
+
+    def pressed_pivot(self,event):
+        self.is_pressed_pivot = True
+        #クリックした場所を保存
+        self.pressed_x = event.x
+        self.pressed_y = event.y
+
     #画像がクリックされたときの処理
     def pressed(self,event):
         #選択された画像を持ってくる
@@ -294,14 +308,19 @@ class Application(tk.Frame):
         image_position[0],
         image_position[1],
         img)
-        
+
+    #ピボットの座標を変化させる
+    #delta_xとdelta_yはマウスの移動量
+    def change_pivot_position(self,delta_x,delta_y):
+        self.myframe.move_pivot(self.canvas,delta_x,delta_y,self.myimage_list[self.item_id])
 
     #画像がドラッグされたときの処理
     def dragged(self,event):
         #枠が表示されていなかったら、あるいは画像が押されていなかったら
         #あるいは画像の隅の四角形が押されていなかったら
         #画像を動かす処理をしない
-        if self.myframe.get_is_rect() == False or (self.is_pressed_image == False and self.is_pressed_rect == False):
+        if self.myframe.get_is_rect() == False or (self.is_pressed_image == False and self.is_pressed_rect == False
+        and self.is_pressed_pivot == False):
             return
         #tag = self.canvas.gettags(self.item_id[0])[0]
         #item = self.canvas.type(tag) # rectangle image
@@ -314,6 +333,9 @@ class Application(tk.Frame):
         elif self.is_pressed_image == True:
             #座標変更
             self.change_position(delta_x,delta_y)
+        elif self.is_pressed_pivot == True:
+            #ピボットの座標変更
+            self.change_pivot_position(delta_x,delta_y)
         self.pressed_x = event.x
         self.pressed_y = event.y
 
@@ -325,6 +347,7 @@ class Application(tk.Frame):
         #各フラグをオフにする
         self.is_pressed_image = False
         self.is_pressed_rect = False
+        self.is_pressed_pivot = False
         self.master.configure(cursor=constant.DEFAULT_MOUSE_CURSOR)
 
     #ファイル読み込みが選択されたときの処理
@@ -335,7 +358,12 @@ class Application(tk.Frame):
             #読み込むファイルの拡張子を指定
             typ = [('png画像','*.png'),
                 ('jpg画像','*.jpg'),
-                ('ttf画像','*.ttf')]
+                ('tga画像','*.tga'),
+                ('dds画像','*.dds'),
+                ('bmp画像','*.bmp'),
+                ('jpeg画像','*.jpeg'),
+                ('ppm画像','*.ppm')
+            ]
             #ファイル選択ダイアログを表示
             fn = filedialog.askopenfilename(filetypes=typ)
             #ファイルが選択されてなかったら処理しない
@@ -474,19 +502,22 @@ class Application(tk.Frame):
                 file.write(bytes((str(scale[1]) + ',').encode()))
 
                 #ファイルパスを持ってきて
-                dds_file_path = fn
+                #dds_file_path = fn
                 #スラッシュで切る
-                slash_number = dds_file_path.rfind('/')
-                dds_file_path = dds_file_path[:slash_number]
+                #slash_number = dds_file_path.rfind('/')
+                #dds_file_path = dds_file_path[:slash_number]
+                #asset_number = dds_file_path.find("Assets")
+                #if asset_number != -1:
+                    #dds_file_path = dds_file_path[asset_number:]
 
                 file_name = myimg.file_name
                 dot_number = file_name.rfind('.')
                 slash_number = file_name.rfind('/')
-                file_name = file_name[slash_number:dot_number]
+                file_name = file_name[slash_number+1:dot_number]
 
 
                 #.ddsを加える
-                dds_file_path+=file_name + '.dds'
+                dds_file_path=file_name + '.dds'
 
                 #.ddsの場合のファイルパスを書き出す
                 file.write(bytes((str(len(dds_file_path)) + ',').encode()))
@@ -512,7 +543,7 @@ class Application(tk.Frame):
     def motion(self,event):
         #マウス座標を取得する
         x,y=self.convert_canvas_position_to_tk_position(event.x,event.y)
-        self.label['text'] = 'x : {}, y : {}'.format(x,y)
+        self.label['text'] = 'x : {:.2f}, y : {:.2f}'.format(x,y)
         #self.label['text'] = 'x : {}, y : {}'.format(event.x,event.y)
 
     #画像を複製する
@@ -604,6 +635,26 @@ class Application(tk.Frame):
         elif re.match(re.compile('[0-9]'),after_word) and ('.' in after_word) == False:
             #self.apply_input_information()
             return True
+        else:
+            return False
+
+    #文字列検証関数、文字の入力を0.0から1.0fに限定させる
+    #Falseで入力拒否
+    def validation_pivot(self,before_word, after_word):
+        if len(after_word) == 0:
+            return True
+        #elif (after_word.isdecimal()):
+        #入力された文字が0～9の半角であれば
+        elif re.match(re.compile('[0-9]'),after_word):
+            #self.apply_input_information()
+            num = None
+            try:
+                num = int(after_word)
+            except:
+                if num > 0.0 and num < 1.0:
+                    return True
+                else:
+                    return False
         else:
             return False
 
@@ -774,18 +825,6 @@ class Application(tk.Frame):
         myimg.set_position(self.canvas,position_x,position_y)
         self.select_image()
 
-    #キャンバスの色を黒色に変更する
-    def change_color_canvas_black(self):
-        self.change_color_canvas('gray0')
-
-    #キャンバスの色を黒色に変更する
-    def change_color_canvas_white(self):
-        self.change_color_canvas('gray100')
-
-    #キャンバスの色を変更する。
-    def change_color_canvas(self,color):
-        self.canvas.configure(bg=color)
-
     #今は使ってない
     #使うときが来るかもしれない
     def on_resize(self,event):
@@ -799,6 +838,7 @@ class Application(tk.Frame):
         #self.canvas.pack()
         #self.canvas.place_forget()
         #self.canvas.pack(side=tk.LEFT,anchor=tk.NE)
+
 
     #キャンバスを初期化
     def init_canvas(self):
@@ -816,6 +856,11 @@ class Application(tk.Frame):
         self.canvas.tag_bind(constant.MYFRAME_IMAGE_TAG, '<ButtonPress-1>', self.pressed_rect)
         self.canvas.tag_bind(constant.MYFRAME_IMAGE_TAG, '<Enter>', self.enter_rect)
         self.canvas.tag_bind(constant.MYFRAME_IMAGE_TAG, '<Leave>', self.leave_rect)
+
+
+        self.canvas.tag_bind(constant.MYFRAME_IMAGE_PIVOT_TAG, '<ButtonPress-1>', self.pressed_pivot)
+        self.canvas.tag_bind(constant.MYFRAME_IMAGE_PIVOT_TAG, '<Enter>', self.enter_pivot)
+        self.canvas.tag_bind(constant.MYFRAME_IMAGE_PIVOT_TAG, '<Leave>', self.leave_pivot)
 
         
         #マウスの座標を表示したい
@@ -854,7 +899,6 @@ class Application(tk.Frame):
         self.mcom = tk.Menu(self.mbar,tearoff=0)
         self.mcom2 = tk.Menu(self.mbar,tearoff=0)
         self.mcom3 = tk.Menu(self.mbar,tearoff=0)
-        self.mcom4 = tk.Menu(self.mbar,tearoff=0)
         #コマンドを追加
         self.mcom.add_command(label='画像読み込み',command=self.load_image)
         self.mcom.add_command(label='全削除',command=self.delete_all_image)
@@ -872,9 +916,6 @@ class Application(tk.Frame):
         self.mcom3.add_command(label='左',command=self.move_image_left)
         self.mcom3.add_command(label='右',command=self.move_image_right)
         self.mbar.add_cascade(label='移動',menu=self.mcom3)
-        self.mcom4.add_command(label='黒',command=self.change_color_canvas_black)
-        self.mcom4.add_command(label='白',command=self.change_color_canvas_white)
-        self.mbar.add_cascade(label='背景',menu=self.mcom4)
         self.master['menu'] = self.mbar
 
     #ラベルを初期化
@@ -976,6 +1017,8 @@ class Application(tk.Frame):
         #Validationコマンドを設定（'key'は文字が入力される毎にイベント発火）
         self.inspector_layer_entry.configure(validate='key', vcmd=vcmd)
 
+    def init_inspector_pivot_label(self):
+        return
 
 
     #インスペクターウィンドウ？の初期化

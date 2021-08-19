@@ -4,6 +4,8 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import glob
 import constant
+import pathlib
+import os
 
 class MyImage():
     def __init__(self):
@@ -27,6 +29,8 @@ class MyImage():
         self.false_height = None
 
         self.number_layer = 10
+
+        self.pivot = [0.5,0.5]
     
     #自身の情報を相手にコピーする
     #oppがコピー元
@@ -36,6 +40,7 @@ class MyImage():
         self.set_position(canvas,position[0],position[1])
         self.scale=opp.scale
         self.number_layer = opp.number_layer
+        self.pivot = opp.pivot
 
     #画像の座標を取得
     #戻り値はキャンバス内の座標
@@ -81,13 +86,19 @@ class MyImage():
             return
         self.scale=scale
 
-    #画像のを取得する
+    #画像の幅を取得する
     def get_width(self):
         return self.width
 
     #画像の高さを取得する
     def get_height(self):
         return self.height
+
+    def set_pivot(self,pivot):
+        self.pivot = pivot
+
+    def get_pivot(self):
+        return self.pivot
 
     #画像を読み込む
     def load_image(self,canvas,file,tag='img'):
@@ -112,6 +123,15 @@ class MyImage():
             else:
                 extension = file[slash_number + 1:]
                 self.name = file[slash_number + 1:number]
+            #p_abs = pathlib.Path(file)
+            #file = p_abs.relative_to()
+            #self.file_name = file
+            try:
+                self.file_name = os.path.relpath(file)
+                self.file_name = self.file_name.replace('\\','/')
+            except:
+                self.file_name = file
+
 
             if self.name != 'rect':
                 pass

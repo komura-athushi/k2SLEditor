@@ -1,3 +1,4 @@
+from pathlib import WindowsPath
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
@@ -38,6 +39,10 @@ class MyFrame():
 
 
         self.is_move = False
+
+        self.pivot_image = None
+
+        self.pivot = [0.5,0.5]
 
     #8つの枠のうち、どこの枠をクリックしたのか判断する
     def determine_where_frame_pressed(self,item_id):
@@ -153,15 +158,58 @@ class MyFrame():
             pos_y + constant.ADD_FRAME_SIZE * self.myimage_position_list[i][3]
             )
             canvas.tag_raise(rect.item_id)
+
+        self.pivot_image.set_position(canvas,position_x,position_y)
+        canvas.tag_raise(self.pivot_image.item_id)
+
+    def move_pivot(self,canvas,delta_x,delta_y,myimg):
+
+        #現在選択している画像の、座標、横幅、縦幅を取得する。
+        position_x,position_y = myimg.get_position()
+        width = float(myimg.get_width())
+        height = float(myimg.get_height())
+
+        #ピボット用の画像を移動させる
+        self.pivot_image.move_position(canvas,delta_x,delta_y)
+
+        pivot_position_x,pivot_position_y = self.pivot_image.get_position()
+
+        right = position_x + width / 2
+        left = position_x - width / 2
+
+        top = position_y + height / 2
+        bottom = position_y - height / 2
+
+        if pivot_position_x > right:
+            pivot_position_x = right
+        elif pivot_position_x < left:
+            pivot_position_x = left
+
+        if pivot_position_y > top:
+            pivot_position_y = top
+        elif pivot_position_y < bottom:
+            pivot_position_y = bottom
+
+        self.pivot_image.set_position(canvas,pivot_position_x,pivot_position_y)
+
+        pivot_x = (pivot_position_x - left) / width
+        pivot_y = (pivot_position_y - bottom) / height
+
+        self.pivot[0] = pivot_x
+        self.pivot[1] = pivot_y
+
+        return self.pivot
+
         
 
     def create_image(self,canvas,position_x,position_y,myimg):
         fn = glob.glob('Assets/sprite/rect.png')
+        widht = float(myimg.get_width())
+        height = float(myimg.get_height())
         for i in range(constant.NUMBER_IMAGE):
             rect = myimage.MyImage()
             rect.load_image(canvas,fn[0],constant.MYFRAME_IMAGE_TAG)
-            widht = float(myimg.get_width())
-            height = float(myimg.get_height())
+            
             pos_x = position_x + widht * self.myimage_position_list[i][0]
             pos_y = position_y + height * self.myimage_position_list[i][1]
             #枠は画像よりちょっと大き目なのでそれを考慮した座標を指定する
@@ -170,6 +218,13 @@ class MyFrame():
             pos_y + constant.ADD_FRAME_SIZE * self.myimage_position_list[i][3]
             )
             self.rect_list[i] = rect
+
+        fn = glob.glob('Assets/sprite/pivot.png')
+
+        pivot = myimage.MyImage()
+        pivot.load_image(canvas,fn[0],constant.MYFRAME_IMAGE_PIVOT_TAG)
+        pivot.set_position(canvas,position_x,position_y)
+        self.pivot_image = pivot
 
     #座標と画像の大きさ
     def create_frame(self,canvas,position_x,position_y,myimg):
@@ -204,4 +259,6 @@ class MyFrame():
         for i in self.rect_list:
             canvas.delete(self.rect_list[i].item_id)
         self.rect_list.clear()
+
+        canvas.delete(self.pivot_image.item_id)
     
