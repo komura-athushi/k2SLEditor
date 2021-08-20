@@ -122,6 +122,14 @@ class Application(tk.Frame):
         self.inspector_layer_entry.delete(0,tk.END)
         self.inspector_layer_entry.insert(tk.END,myimg.number_layer)
 
+        #ピボット
+        pivot = myimg.get_pivot()
+        self.inspector_pivot_x_entry.delete(0,tk.END)
+        self.inspector_pivot_y_entry.delete(0,tk.END)
+
+        self.inspector_pivot_x_entry.insert(tk.END,pivot[0])
+        self.inspector_pivot_y_entry.insert(tk.END,pivot[1])
+
     #インスペクターウィンドウの情報を空にする
     def enpty_information_inspector_window(self):
         self.inspector_image_name_entry.delete(0, tk.END)
@@ -136,6 +144,9 @@ class Application(tk.Frame):
         self.inspector_image_scale_y_entry.delete(0, tk.END)
 
         self.inspector_layer_entry.delete(0, tk.END)
+
+        self.inspector_pivot_x_entry.delete(0,tk.END)
+        self.inspector_pivot_y_entry.delete(0,tk.END)
 
     #レイヤーの優先度順に画像を表示する
     def display_images_according_layer_priority(self):
@@ -176,6 +187,7 @@ class Application(tk.Frame):
             self.myframe.create_frame(self.canvas,image_position_x,image_position_y,myimage)
         else:
             self.myframe.set_position(self.canvas,image_position_x,image_position_y,myimage)
+            self.myframe.set_pivot(self.canvas,image_position_x,image_position_y,myimage)
 
         #枠を削除してから
         self.canvas.delete(self.canvas_rect)
@@ -312,7 +324,7 @@ class Application(tk.Frame):
     #ピボットの座標を変化させる
     #delta_xとdelta_yはマウスの移動量
     def change_pivot_position(self,delta_x,delta_y):
-        self.myframe.move_pivot(self.canvas,delta_x,delta_y,self.myimage_list[self.item_id])
+        self.myimage_list[self.item_id].set_pivot(self.myframe.move_pivot(self.canvas,delta_x,delta_y,self.myimage_list[self.item_id]))
 
     #画像がドラッグされたときの処理
     def dragged(self,event):
@@ -649,12 +661,13 @@ class Application(tk.Frame):
             #self.apply_input_information()
             num = None
             try:
-                num = int(after_word)
-            except:
-                if num > 0.0 and num < 1.0:
-                    return True
-                else:
+                num = float(after_word)
+                if num < 0.0 and num > 1.0:
                     return False
+                else:
+                    return True
+            except:
+                return False
         else:
             return False
 
@@ -682,6 +695,8 @@ class Application(tk.Frame):
         entry_list.append(self.inspector_layer_entry.get())
         entry_list.append(self.inspector_image_scale_x_entry.get())
         entry_list.append(self.inspector_image_scale_y_entry.get())
+        entry_list.append(self.inspector_pivot_x_entry.get())
+        entry_list.append(self.inspector_pivot_y_entry.get())
         for entry in entry_list:
             #入力が空であれば以下の処理をしない
             if self.determine_input_empty(entry) == True:
@@ -703,6 +718,10 @@ class Application(tk.Frame):
         float(self.inspector_image_scale_y_entry.get())])
         #レイヤー優先度
         self.myimage_list[self.item_id].number_layer = int(self.inspector_layer_entry.get())
+        #ピボット
+        pivot = [float(self.inspector_pivot_x_entry.get()),float(self.inspector_pivot_y_entry.get())]
+        self.myimage_list[self.item_id].set_pivot(pivot)
+        self.myframe.set_pivot(self.canvas,position_x,position_y,self.myimage_list[self.item_id])
         #リストボックスを選択
         self.project_list.select_set(self.number_image)
         self.select_image()
@@ -1018,6 +1037,32 @@ class Application(tk.Frame):
         self.inspector_layer_entry.configure(validate='key', vcmd=vcmd)
 
     def init_inspector_pivot_label(self):
+        inspector_pivot = tk.Label(self.inspector,text='ピボット')
+        inspector_pivot.place(x=constant.INSPECTOR_STANDARS_POSITION_X,y=constant.INSPECTOR_PIVOT_Y)
+
+        #X
+        inspector_pivot_x = tk.Label(self.inspector,text='x',font=("", "15", ""))
+        inspector_pivot_x.place(x=constant.INSPECTOR_STANDARS_POSITION_X,y=constant.INSPECTOR_PIVOT_XY_Y)
+        #entryを設定
+        sv = tk.StringVar()
+        self.inspector_pivot_x_entry = tk.Entry(self.inspector,width=constant.INSPECTOR_PIVOT_ENTRY_SIZE_X,textvariable=sv)
+        self.inspector_pivot_x_entry.place(x=constant.INSPECTOR_PIVOT_X_ENTRY_X,y=constant.INSPECTOR_PIVOT_ENTRY_Y)
+        # %s は変更前文字列, %P は変更後文字列を引数で渡す
+        vcmd1 = (self.inspector_pivot_x_entry.register(self.validation_pivot), '%s', '%P')
+        #Validationコマンドを設定（'key'は文字が入力される毎にイベント発火）
+        self.inspector_pivot_x_entry.configure(validate='key', vcmd=vcmd1)
+
+        #y
+        inspector_pivot_y = tk.Label(self.inspector,text='y',font=("", "15", ""))
+        inspector_pivot_y.place(x=constant.INSPECTOR_PIVOT_Y_X,y=constant.INSPECTOR_PIVOT_XY_Y)
+        #entryを設定
+        sv = tk.StringVar()
+        self.inspector_pivot_y_entry = tk.Entry(self.inspector,width=constant.INSPECTOR_PIVOT_ENTRY_SIZE_X,textvariable=sv)
+        self.inspector_pivot_y_entry.place(x=constant.INSPECTOR_PIVOT_Y_ENTRY_X,y=constant.INSPECTOR_PIVOT_ENTRY_Y)
+        # %s は変更前文字列, %P は変更後文字列を引数で渡す
+        vcmd2 = (self.inspector_pivot_y_entry.register(self.validation_pivot), '%s', '%P')
+        #Validationコマンドを設定（'key'は文字が入力される毎にイベント発火）
+        self.inspector_pivot_y_entry.configure(validate='key', vcmd=vcmd2)
         return
 
 
@@ -1043,6 +1088,8 @@ class Application(tk.Frame):
         #レイヤー表示優先度項目の初期化
         self.init_inspector_layer_label()
 
+        #ピボット項目の初期化
+        self.init_inspector_pivot_label()
 
         self.inspector_button = tk.Button(self.inspector,text='入力項目を反映させる',command=self.apply_input_information,fg='red')
         self.inspector_button.place(x=constant.INSPECTOR_BUTTON_X,y=constant.INSPECTOR_BUTTON_Y)

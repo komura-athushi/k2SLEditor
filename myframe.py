@@ -159,11 +159,32 @@ class MyFrame():
             )
             canvas.tag_raise(rect.item_id)
 
-        self.pivot_image.set_position(canvas,position_x,position_y)
+        self.set_pivot(canvas,position_x,position_y,myimg)
         canvas.tag_raise(self.pivot_image.item_id)
 
-    def move_pivot(self,canvas,delta_x,delta_y,myimg):
 
+    def set_pivot(self,canvas,position_x,position_y,myimg):
+     
+        #現在選択している画像の、座標、横幅、縦幅を取得する。
+        position_x,position_y = myimg.get_position()
+        width = float(myimg.get_width())
+        height = float(myimg.get_height())
+        
+        left = position_x - width / 2
+
+        bottom = position_y - height / 2
+
+        pivot = myimg.get_pivot()
+
+        pivot_position_x = width * pivot[0] + left
+        pivot_position_y = height * pivot[1] + bottom
+
+        self.pivot_image.set_position(canvas,pivot_position_x,pivot_position_y)
+
+        self.pivot = pivot
+
+    def move_pivot(self,canvas,delta_x,delta_y,myimg):
+      
         #現在選択している画像の、座標、横幅、縦幅を取得する。
         position_x,position_y = myimg.get_position()
         width = float(myimg.get_width())
@@ -221,10 +242,11 @@ class MyFrame():
 
         fn = glob.glob('Assets/sprite/pivot.png')
 
-        pivot = myimage.MyImage()
-        pivot.load_image(canvas,fn[0],constant.MYFRAME_IMAGE_PIVOT_TAG)
-        pivot.set_position(canvas,position_x,position_y)
-        self.pivot_image = pivot
+        self.pivot_image = myimage.MyImage()
+        self.pivot_image.load_image(canvas,fn[0],constant.MYFRAME_IMAGE_PIVOT_TAG)
+        self.set_pivot(canvas,position_x,position_y,myimg)
+
+
 
     #座標と画像の大きさ
     def create_frame(self,canvas,position_x,position_y,myimg):
