@@ -44,6 +44,8 @@ class MyFrame():
 
         self.pivot = [0.5,0.5]
 
+        self.pivot_position = [0.0,0.0]
+
     #8つの枠のうち、どこの枠をクリックしたのか判断する
     def determine_where_frame_pressed(self,item_id):
         for i in self.rect_list:
@@ -121,6 +123,10 @@ class MyFrame():
     def get_position(self):
         return self.position1_x,self.position1_y,self.position2_x,self.position2_y
 
+    
+    def get_pivot_position(self):
+        return self.pivot_position
+
     #枠を動かす
     def set_position(self,canvas,position_x,position_y,myimg):
         if self.rect == None:
@@ -163,10 +169,10 @@ class MyFrame():
         canvas.tag_raise(self.pivot_image.item_id)
 
 
-    def set_pivot(self,canvas,position_x,position_y,myimg):
+    def set_pivot(self,canvas,image_position_x,image_position_y,myimg):
      
         #現在選択している画像の、座標、横幅、縦幅を取得する。
-        position_x,position_y = myimg.get_position()
+        position_x,position_y = image_position_x,image_position_y
         width = float(myimg.get_width())
         height = float(myimg.get_height())
         
@@ -180,7 +186,7 @@ class MyFrame():
         pivot_position_y = height * pivot[1] + bottom
 
         self.pivot_image.set_position(canvas,pivot_position_x,pivot_position_y)
-
+        self.pivot_position = [pivot_position_x,pivot_position_y]
         self.pivot = pivot
 
     def move_pivot(self,canvas,delta_x,delta_y,myimg):
@@ -194,7 +200,7 @@ class MyFrame():
         self.pivot_image.move_position(canvas,delta_x,delta_y)
 
         pivot_position_x,pivot_position_y = self.pivot_image.get_position()
-
+        self.pivot_position = [pivot_position_x,pivot_position_y]
         right = position_x + width / 2
         left = position_x - width / 2
 
@@ -212,7 +218,7 @@ class MyFrame():
             pivot_position_y = bottom
 
         self.pivot_image.set_position(canvas,pivot_position_x,pivot_position_y)
-
+        self.pivot_position = [pivot_position_x,pivot_position_y]
         pivot_x = (pivot_position_x - left) / width
         pivot_y = (pivot_position_y - bottom) / height
 

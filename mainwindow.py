@@ -61,6 +61,9 @@ class Application(tk.Frame):
         #画像の隅の四角が押された
         self.is_pressed_rect = False
 
+        #pivotが押された
+        self.is_pressed_pivot = False
+
         #どこの隅の画像を押したか
         self.number_rect = None
 
@@ -99,7 +102,8 @@ class Application(tk.Frame):
         #座標
         self.inspector_image_position_x_entry.delete(0, tk.END)
         self.inspector_image_position_y_entry.delete(0, tk.END)
-        position = myimg.get_position()
+        #position = myimg.get_position()
+        position = myimg.get_pivot_position()
         #キャンバス座標をtk座標に変換
         position_x,position_y = self.convert_canvas_position_to_tk_position(position[0],position[1])
         self.inspector_image_position_x_entry.insert(tk.END,position_x)
@@ -185,9 +189,11 @@ class Application(tk.Frame):
         #self.myframe.create_frame(self.canvas,image_position_x,image_position_y,myimage)
         if self.myframe.get_is_rect() == False: 
             self.myframe.create_frame(self.canvas,image_position_x,image_position_y,myimage)
+            self.myimage_list[self.item_id].set_pivot_position(self.myframe.get_pivot_position())
         else:
             self.myframe.set_position(self.canvas,image_position_x,image_position_y,myimage)
             self.myframe.set_pivot(self.canvas,image_position_x,image_position_y,myimage)
+            self.myimage_list[self.item_id].set_pivot_position(self.myframe.get_pivot_position())
 
         #枠を削除してから
         self.canvas.delete(self.canvas_rect)
@@ -320,11 +326,13 @@ class Application(tk.Frame):
         image_position[0],
         image_position[1],
         img)
+        img.set_pivot_position(self.myframe.get_pivot_position())
 
     #ピボットの座標を変化させる
     #delta_xとdelta_yはマウスの移動量
     def change_pivot_position(self,delta_x,delta_y):
         self.myimage_list[self.item_id].set_pivot(self.myframe.move_pivot(self.canvas,delta_x,delta_y,self.myimage_list[self.item_id]))
+        self.myimage_list[self.item_id].set_pivot_position(self.myframe.get_pivot_position())
 
     #画像がドラッグされたときの処理
     def dragged(self,event):
@@ -650,6 +658,8 @@ class Application(tk.Frame):
         else:
             return False
 
+    
+
     #文字列検証関数、文字の入力を0.0から1.0fに限定させる
     #Falseで入力拒否
     def validation_pivot(self,before_word, after_word):
@@ -679,7 +689,6 @@ class Application(tk.Frame):
         else:
             return False
 
-    
     #入力された情報を反映させる
     def apply_input_information(self):
         #何も選択されてなかったら処理しない
@@ -706,22 +715,33 @@ class Application(tk.Frame):
         self.myimage_list[self.item_id].name = name
         self.project_list.insert(self.number_image, self.myimage_list[self.item_id].name)
 
-        #ウィンドウから入力情報持ってくる
-        #座標
-        position_x = float(self.inspector_image_position_x_entry.get())
-        position_y = float(self.inspector_image_position_y_entry.get())
-        position_x,position_y = self.convert_tk_position_to_canvas_position(position_x,position_y)
-        self.myimage_list[self.item_id].set_position(self.canvas,
-        position_x,
-        position_y)
+        
+        #ウィンドウから情報を持ってくる。
+
+        #ピボット
+        pivot = [float(self.inspector_pivot_x_entry.get()),float(self.inspector_pivot_y_entry.get())]
+
+        if abs(pivot[0] - self.myframe.pivot[0]) > 0.001 or abs(pivot[1] - self.myframe.pivot[1]):
+            self.myimage_list[self.item_id].set_pivot(pivot)
+            image_position = self.myimage_list[self.item_id].get_position()
+            self.myframe.set_pivot(self.canvas,image_position[0],image_position[1],self.myimage_list[self.item_id])
+            #self.myframe.set_pivot(self.canvas,position_x,position_y,self.myimage_list[self.item_id])
+
+        else:
+            #座標
+            position_x = float(self.inspector_image_position_x_entry.get())
+            position_y = float(self.inspector_image_position_y_entry.get())
+            position_x,position_y = self.convert_tk_position_to_canvas_position(position_x,position_y)
+            position_x,position_y = self.myimage_list[self.item_id].convert_pivot_position_to_image_position(position_x,position_y,pivot)
+            self.myimage_list[self.item_id].set_position(self.canvas,
+            position_x,
+            position_y)
+        
         self.myimage_list[self.item_id].set_scale([float(self.inspector_image_scale_x_entry.get()),
         float(self.inspector_image_scale_y_entry.get())])
         #レイヤー優先度
         self.myimage_list[self.item_id].number_layer = int(self.inspector_layer_entry.get())
-        #ピボット
-        pivot = [float(self.inspector_pivot_x_entry.get()),float(self.inspector_pivot_y_entry.get())]
-        self.myimage_list[self.item_id].set_pivot(pivot)
-        self.myframe.set_pivot(self.canvas,position_x,position_y,self.myimage_list[self.item_id])
+        
         #リストボックスを選択
         self.project_list.select_set(self.number_image)
         self.select_image()

@@ -31,6 +31,8 @@ class MyImage():
         self.number_layer = 10
 
         self.pivot = [0.5,0.5]
+
+        self.pivot_position = [0.0,0.0]
     
     #自身の情報を相手にコピーする
     #oppがコピー元
@@ -52,6 +54,20 @@ class MyImage():
     def set_position(self,canvas,position_x,position_y):
         canvas.coords(self.item_id,position_x,position_y)
         self.position=[position_x,position_y]
+
+    def set_pivot_position(self,pivot_position):
+        self.pivot_position = pivot_position
+
+    def get_pivot_position(self):
+        return self.pivot_position
+
+    def convert_pivot_position_to_image_position(self,pivot_position_x,pivot_position_y,pivot):
+
+        position_x = pivot_position_x - self.width * pivot[0] + self.width / 2
+        position_y = pivot_position_y - self.height * pivot[1] + self.height / 2
+
+        return position_x,position_y
+
 
     #画像を移動量分動かす
     #移動量はキャンバス上での移動量
