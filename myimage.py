@@ -55,6 +55,10 @@ class MyImage():
         canvas.coords(self.item_id,position_x,position_y)
         self.position=[position_x,position_y]
 
+    def move_position(self,canvas,delta_x,delta_y):
+        canvas.coords(self.item_id,self.position[0]+delta_x,self.position[1]+delta_y)
+        self.position=[self.position[0]+delta_x,self.position[1]+delta_y]
+
     def set_pivot_position(self,pivot_position):
         self.pivot_position = pivot_position
 
@@ -64,7 +68,7 @@ class MyImage():
     def convert_pivot_position_to_image_position(self,pivot_position_x,pivot_position_y,pivot):
 
         position_x = pivot_position_x - self.width * pivot[0] + self.width / 2
-        position_y = pivot_position_y - self.height * pivot[1] + self.height / 2
+        position_y = pivot_position_y + self.height * pivot[1] - self.height / 2
 
         return position_x,position_y
 

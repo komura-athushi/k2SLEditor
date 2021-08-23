@@ -178,12 +178,12 @@ class MyFrame():
         
         left = position_x - width / 2
 
-        bottom = position_y - height / 2
+        top = position_y + height / 2
 
         pivot = myimg.get_pivot()
 
         pivot_position_x = width * pivot[0] + left
-        pivot_position_y = height * pivot[1] + bottom
+        pivot_position_y = -height * pivot[1] + top
 
         self.pivot_image.set_position(canvas,pivot_position_x,pivot_position_y)
         self.pivot_position = [pivot_position_x,pivot_position_y]
@@ -220,7 +220,7 @@ class MyFrame():
         self.pivot_image.set_position(canvas,pivot_position_x,pivot_position_y)
         self.pivot_position = [pivot_position_x,pivot_position_y]
         pivot_x = (pivot_position_x - left) / width
-        pivot_y = (pivot_position_y - bottom) / height
+        pivot_y = abs((pivot_position_y - top)) / height
 
         self.pivot[0] = pivot_x
         self.pivot[1] = pivot_y

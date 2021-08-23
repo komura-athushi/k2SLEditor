@@ -458,14 +458,21 @@ class Application(tk.Frame):
                     #スケール設定して
                     scale = [float(image[9]),float(image[10])]
                     myimg.set_scale(scale)
-                    #座標を設定する
-                    position_x,position_y = self.convert_tk_position_to_canvas_position(float(image[4]),float(image[5]))
-                    myimg.set_position_no_move(position_x,position_y)
+                   
+                    #ピボット設定して
+                    pivot = [float(image[11]),float(image[12])]
+                    myimg.set_pivot(pivot)
+                    
                 except:
                     messagebox.showerror('エラー', fn + 'の読み込みに失敗しました。')
                     is_success = False
                 try:
                     self.load_image(myimg)
+                    #座標は画像をロードして大きさが判明した際に、設定する。
+                    position_x,position_y = self.convert_tk_position_to_canvas_position(float(image[4]),float(image[5]))
+                    position_x,position_y = self.myimage_list[self.item_id].convert_pivot_position_to_image_position(position_x,position_y,pivot)
+                    self.myimage_list[self.item_id].set_position(self.canvas,position_x,position_y)
+                    self.select_image()
                 except:
                     messagebox.showerror('エラー', image[1] + 'が読み込めませんでした、ファイルパスを確認してください。')
                     is_success = False
@@ -473,6 +480,7 @@ class Application(tk.Frame):
             messagebox.showinfo('メッセージ', 'レベルの読み込みに成功しました！')
         #レイヤー優先度順に画像を表示させる
         self.display_images_according_layer_priority()
+        
 
     #レベルデータを出力する
     def export_level(self):
@@ -494,14 +502,16 @@ class Application(tk.Frame):
             for i in self.myimage_list:
                 myimg=self.myimage_list[i]
                 #画像の座標を取得
-                x,y = myimg.get_position()
+                pivot_position = myimg.get_pivot_position()
+                x,y = pivot_position[0],pivot_position[1]
                 #画像の座標を書き出す
                 #キャンバス座標をtk座標に変換する
                 x,y=self.convert_canvas_position_to_tk_position(x,y)
                 scale=myimg.scale
-                width=myimg.image_size[0]
-                height=myimg.image_size[1]
+                width=myimg.false_width
+                height=myimg.false_height
                 layer=myimg.number_layer
+                pivot=myimg.get_pivot()
 
                 #画像の名前を書き出す
                 file.write(bytes((str(len(myimg.name)) + ',').encode()))
@@ -520,6 +530,9 @@ class Application(tk.Frame):
                 #画像のスケールを書き出す
                 file.write(bytes((str(scale[0]) + ',').encode()))
                 file.write(bytes((str(scale[1]) + ',').encode()))
+                #ピボットを書き出す
+                file.write(bytes((str(pivot[0]) + ',').encode()))
+                file.write(bytes((str(pivot[1]) + ',').encode()))
 
                 #ファイルパスを持ってきて
                 #dds_file_path = fn
@@ -720,22 +733,28 @@ class Application(tk.Frame):
 
         #ピボット
         pivot = [float(self.inspector_pivot_x_entry.get()),float(self.inspector_pivot_y_entry.get())]
+        old_position = self.myframe.get_pivot_position()
 
-        if abs(pivot[0] - self.myframe.pivot[0]) > 0.001 or abs(pivot[1] - self.myframe.pivot[1]):
-            self.myimage_list[self.item_id].set_pivot(pivot)
-            image_position = self.myimage_list[self.item_id].get_position()
-            self.myframe.set_pivot(self.canvas,image_position[0],image_position[1],self.myimage_list[self.item_id])
-            #self.myframe.set_pivot(self.canvas,position_x,position_y,self.myimage_list[self.item_id])
+        #if abs(pivot[0] - self.myframe.pivot[0]) > 0.001 or abs(pivot[1] - self.myframe.pivot[1]):
+        self.myimage_list[self.item_id].set_pivot(pivot)
+        image_position = self.myimage_list[self.item_id].get_position()
+        self.myframe.set_pivot(self.canvas,image_position[0],image_position[1],self.myimage_list[self.item_id])
+        self.myimage_list[self.item_id].set_pivot(pivot)
+        #old_position = self.myframe.get_pivot_position()
+        #self.myframe.set_pivot(self.canvas,position_x,position_y,self.myimage_list[self.item_id])
 
-        else:
-            #座標
-            position_x = float(self.inspector_image_position_x_entry.get())
-            position_y = float(self.inspector_image_position_y_entry.get())
-            position_x,position_y = self.convert_tk_position_to_canvas_position(position_x,position_y)
-            position_x,position_y = self.myimage_list[self.item_id].convert_pivot_position_to_image_position(position_x,position_y,pivot)
-            self.myimage_list[self.item_id].set_position(self.canvas,
-            position_x,
-            position_y)
+        #座標
+        position_x = float(self.inspector_image_position_x_entry.get())
+        position_y = float(self.inspector_image_position_y_entry.get())
+        position_x,position_y = self.convert_tk_position_to_canvas_position(position_x,position_y)
+        delta_x,delta_y = position_x-old_position[0], position_y - old_position[1]
+        self.myframe.set_pivot(self.canvas,image_position[0]+delta_x,image_position[1]+delta_y,self.myimage_list[self.item_id])
+        pivot_position = self.myframe.get_pivot_position()
+
+        position_x,position_y = self.myimage_list[self.item_id].convert_pivot_position_to_image_position(pivot_position[0],pivot_position[1],pivot)
+        self.myimage_list[self.item_id].set_position(self.canvas,
+        position_x,
+        position_y)
         
         self.myimage_list[self.item_id].set_scale([float(self.inspector_image_scale_x_entry.get()),
         float(self.inspector_image_scale_y_entry.get())])
