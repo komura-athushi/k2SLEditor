@@ -480,6 +480,7 @@ class Application(tk.Frame):
             messagebox.showinfo('メッセージ', 'レベルの読み込みに成功しました！')
         #レイヤー優先度順に画像を表示させる
         self.display_images_according_layer_priority()
+        self.select_image()
         
 
     #レベルデータを出力する
