@@ -42,8 +42,8 @@ class MyImage():
         self.set_position(canvas,position[0],position[1])
         #参照渡しではなく、値渡しにする
         #pivotがコピー元にも反映される不具合があったため。
-        self.scale=opp.scale.copy()
-        self.number_layer = opp.number_layer.copy()
+        self.scale=opp.scale
+        self.number_layer = opp.number_layer
         self.pivot = opp.pivot.copy()
         self.pivot_position = opp.pivot_position.copy()
         #self.pivot = opp.pivot
